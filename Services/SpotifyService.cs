@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Net.Http.Headers;
 using vibium.Models;
 
 namespace vibium.Services;
@@ -35,7 +36,7 @@ public class SpotifyService
         var client = _httpClientFactory.CreateClient();
         var authString = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
         
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", authString);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authString);
 
         var content = new FormUrlEncodedContent(new[]
         {
@@ -58,17 +59,17 @@ public class SpotifyService
         }
 
         _accessToken = tokenResponse.access_token;
-        _tokenExpiration = DateTime.UtcNow.AddSeconds(tokenResponse.expires_in - 60);
+        _tokenExpiration = DateTime.UtcNow.AddSeconds(tokenResponse.expires_in -60);
 
         return _accessToken;
     }
 
-    public async Task<List<TrackInfo>> SearchTracksAsync(string query, bool explicitFilter = false, int limit = 10)
+    public async Task<List<TrackInfo>> SearchTracksAsync(string query, bool explicitFilter = false, int limit =10)
     {
         var token = await GetAccessTokenAsync();
         var client = _httpClientFactory.CreateClient();
         
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var encodedQuery = Uri.EscapeDataString(query);
         var url = $"https://api.spotify.com/v1/search?q={encodedQuery}&type=track&limit={limit}";
@@ -93,24 +94,24 @@ public class SpotifyService
             Artist = string.Join(", ", track.artists?.Select(a => a.name) ?? new List<string>()),
             AlbumName = track.album?.name,
             AlbumArt = track.album?.images?.FirstOrDefault()?.url,
-            SpotifyUrl = track.external_urls?.spotify
+            SpotifyUrl = track.external_urls?.spotify,
+            IsExplicit = track.Explicit
         }).ToList() ?? new List<TrackInfo>();
 
         if (explicitFilter)
         {
-            // Note: The Spotify API doesn't always provide explicit content flag in search results
-            // For a production app, you might want to use the track details endpoint to check this
+            tracks = tracks.Where(t => !t.IsExplicit).ToList();
         }
 
         return tracks;
     }
 
-    public async Task<List<TrackInfo>> GetRecommendationsAsync(string seedGenres, int limit = 10)
+    public async Task<List<TrackInfo>> GetRecommendationsAsync(string seedGenres, int limit =10)
     {
         var token = await GetAccessTokenAsync();
         var client = _httpClientFactory.CreateClient();
         
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var encodedGenres = Uri.EscapeDataString(seedGenres);
         var url = $"https://api.spotify.com/v1/recommendations?seed_genres={encodedGenres}&limit={limit}";
@@ -135,7 +136,83 @@ public class SpotifyService
             Artist = string.Join(", ", track.artists?.Select(a => a.name) ?? new List<string>()),
             AlbumName = track.album?.name,
             AlbumArt = track.album?.images?.FirstOrDefault()?.url,
-            SpotifyUrl = track.external_urls?.spotify
+            SpotifyUrl = track.external_urls?.spotify,
+            IsExplicit = track.Explicit
         }).ToList() ?? new List<TrackInfo>();
+    }
+
+    // New: search artist by name, return artist id or null
+    public async Task<string?> SearchArtistIdAsync(string artistName)
+    {
+        if (string.IsNullOrWhiteSpace(artistName)) return null;
+
+        var token = await GetAccessTokenAsync();
+        var client = _httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var encoded = Uri.EscapeDataString(artistName);
+        var url = $"https://api.spotify.com/v1/search?q={encoded}&type=artist&limit=1";
+        var response = await client.GetAsync(url);
+        if (!response.IsSuccessStatusCode) return null;
+
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.TryGetProperty("artists", out var artists) && artists.TryGetProperty("items", out var items) && items.GetArrayLength() >0)
+        {
+            var id = items[0].GetProperty("id").GetString();
+            return id;
+        }
+
+        return null;
+    }
+
+    // New: get artist top tracks by artist id
+    public async Task<List<TrackInfo>> GetArtistTopTracksAsync(string artistId, int limit =10, string market = "US")
+    {
+        if (string.IsNullOrWhiteSpace(artistId)) return new List<TrackInfo>();
+
+        var token = await GetAccessTokenAsync();
+        var client = _httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var url = $"https://api.spotify.com/v1/artists/{artistId}/top-tracks?market={market}";
+        var response = await client.GetAsync(url);
+        if (!response.IsSuccessStatusCode) return new List<TrackInfo>();
+
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        if (!doc.RootElement.TryGetProperty("tracks", out var tracksElem)) return new List<TrackInfo>();
+
+        var results = new List<TrackInfo>();
+        foreach (var t in tracksElem.EnumerateArray())
+        {
+            if (results.Count >= limit) break;
+            var id = t.GetProperty("id").GetString();
+            var name = t.GetProperty("name").GetString();
+            var artists = t.GetProperty("artists").EnumerateArray().Select(a => a.GetProperty("name").GetString()).Where(s => s != null).Cast<string>().ToList();
+            var albumName = t.GetProperty("album").GetProperty("name").GetString();
+            string? albumArt = null;
+            if (t.GetProperty("album").TryGetProperty("images", out var images) && images.GetArrayLength() >0)
+            {
+                albumArt = images[0].GetProperty("url").GetString();
+            }
+            string? spotifyUrl = null;
+            if (t.TryGetProperty("external_urls", out var ex) && ex.TryGetProperty("spotify", out var spUrl))
+            {
+                spotifyUrl = spUrl.GetString();
+            }
+
+            results.Add(new TrackInfo
+            {
+                Id = id,
+                Name = name,
+                Artist = string.Join(", ", artists),
+                AlbumName = albumName,
+                AlbumArt = albumArt,
+                SpotifyUrl = spotifyUrl
+            });
+        }
+
+        return results;
     }
 }

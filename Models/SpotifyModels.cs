@@ -1,3 +1,7 @@
+#nullable enable
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
+
 namespace vibium.Models;
 
 public class SpotifyTokenResponse
@@ -24,6 +28,8 @@ public class SpotifyTrack
     public List<SpotifyArtist>? artists { get; set; }
     public SpotifyAlbum? album { get; set; }
     public ExternalUrls? external_urls { get; set; }
+    [JsonPropertyName("explicit")]
+    public bool Explicit { get; set; }
 }
 
 public class ExternalUrls

@@ -1,65 +1,66 @@
 ﻿@{
-    ViewData["Title"] = "Music Suggester";
+    ViewData["Title"] = "vibium";
 }
 
 <div class="music-suggester-container">
-    <div class="header-section">
-        <h1 class="main-title">🎵 Music Suggester</h1>
-        <p class="subtitle">Discover music that matches your mood and activity</p>
-        <div id="configStatus" class="config-status"></div>
-    </div>
+    <div class="music-suggester-inner">
+        <div class="header-section">
+            <h1 class="main-title">vibium</h1>
+            <p class="subtitle">Your personal music companion — find songs that fit your mood and activity</p>
+        </div>
 
-    <div class="form-container">
-        <form id="musicForm">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="mood">Mood</label>
-                    <input type="text" id="mood" class="form-control" placeholder="e.g., Happy, Relaxed, Energetic">
-                </div>
-                <div class="form-group">
-                    <label for="activity">Activity</label>
-                    <input type="text" id="activity" class="form-control" placeholder="e.g., Workout, Study, Party">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="description">Description</label>
-                <textarea id="description" class="form-control" rows="3" placeholder="Describe the kind of music you want..."></textarea>
-            </div>
-
-            <div class="preferences-section">
-                <h3 class="section-title">Preferences</h3>
-                
+        <div class="form-container">
+            <form id="musicForm">
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="language">Language</label>
-                        <input type="text" id="language" class="form-control" placeholder="e.g., English, Spanish, K-pop">
+                        <label for="mood">Mood</label>
+                        <input type="text" id="mood" class="form-control" placeholder="e.g., Happy, Relaxed, Energetic">
                     </div>
                     <div class="form-group">
-                        <label for="genres">Genres (comma-separated)</label>
-                        <input type="text" id="genres" class="form-control" placeholder="e.g., pop, rock, jazz">
+                        <label for="activity">Activity</label>
+                        <input type="text" id="activity" class="form-control" placeholder="e.g., Workout, Study, Party">
                     </div>
                 </div>
 
-                <div class="form-check">
-                    <input type="checkbox" id="explicitFilter" class="form-check-input">
-                    <label for="explicitFilter" class="form-check-label">Filter explicit content</label>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" class="form-control" rows="3" placeholder="Describe the kind of music you want (e.g., upbeat, mellow, or 'By Adele')"></textarea>
                 </div>
-            </div>
 
-            <button type="submit" class="btn-submit" id="submitBtn">
-                <span id="btnText">Find Music</span>
-                <span id="btnLoader" class="loader" style="display: none;"></span>
-            </button>
-        </form>
-    </div>
+                <div class="preferences-section">
+                    <h3 class="section-title">Preferences</h3>
 
-    <div id="errorMessage" class="error-message" style="display: none;"></div>
-    <div id="successMessage" class="success-message" style="display: none;"></div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="language">Language</label>
+                            <input type="text" id="language" class="form-control" placeholder="e.g., English, Spanish, K-pop">
+                        </div>
+                        <div class="form-group">
+                            <label for="genres">Genres (comma-separated)</label>
+                            <input type="text" id="genres" class="form-control" placeholder="e.g., pop, rock, jazz">
+                        </div>
+                    </div>
 
-    <div id="resultsContainer" class="results-container" style="display: none;">
-        <h2 class="results-title">Suggested Tracks</h2>
-        <div id="tracksList" class="tracks-grid"></div>
+                    <div class="form-check">
+                        <input type="checkbox" id="explicitFilter" class="form-check-input">
+                        <label for="explicitFilter" class="form-check-label">Filter explicit content</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <span id="btnText">Find Music</span>
+                    <span id="btnLoader" class="loader" style="display: none;"></span>
+                </button>
+            </form>
+        </div>
+
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+        <div id="successMessage" class="success-message" style="display: none;"></div>
+
+        <div id="resultsContainer" class="results-container" style="display: none;">
+            <h2 class="results-title">Suggested Tracks</h2>
+            <div id="tracksList" class="tracks-grid"></div>
+        </div>
     </div>
 </div>
 
