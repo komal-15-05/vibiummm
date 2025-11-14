@@ -4,13 +4,13 @@ A modern web application that suggests music based on your mood, activity, and p
 
 ## Features
 
-- ?? Music suggestions based on mood, activity, and description
-- ?? AI-powered query refinement using Google Gemini (optional)
-- ?? User preferences saved in localStorage (language, explicit filter, genres)
-- ?? Clean, responsive UI with smooth animations
-- ?? Loading states and error handling
-- ?? Direct links to listen on Spotify
-- ?? Mobile-friendly design
+- 🎵 Music suggestions based on mood, activity, and description
+- 🤖 AI-powered query refinement using Google Gemini (optional)
+- 💾 User preferences saved in localStorage (language, explicit filter, genres)
+- 🖥️ Clean, responsive UI with smooth animations
+- ⏳ Loading states and error handling
+- 🔗 Direct links to listen on Spotify
+- 📱 Mobile-friendly design
 
 ## Setup Instructions
 
@@ -35,26 +35,11 @@ Note: Gemini is optional. If not configured, the app will use basic query buildi
 
 Open `appsettings.json` and update with your credentials:
 
-```json
-{
-  "Spotify": {
-    "ClientId": "YOUR_SPOTIFY_CLIENT_ID",
-    "ClientSecret": "YOUR_SPOTIFY_CLIENT_SECRET"
-  },
-  "Gemini": {
-    "ApiKey": "YOUR_GEMINI_API_KEY"
-  }
-}
-```
 
 **Important:** For production, use User Secrets or environment variables instead of storing credentials in appsettings.json
 
 ### 4. Run the Application
 
-```bash
-dotnet restore
-dotnet run
-```
 
 The application will be available at `https://localhost:5001` or `http://localhost:5000`
 
@@ -101,31 +86,6 @@ The application will be available at `https://localhost:5001` or `http://localho
 
 ## Project Structure
 
-```
-vibium/
-??? Controllers/
-?   ??? HomeController.cs
-?   ??? MusicController.cs
-??? Models/
-?   ??? SpotifyModels.cs
-?   ??? GeminiModels.cs
-?   ??? MusicRequest.cs
-??? Services/
-?   ??? SpotifyService.cs
-?   ??? GeminiService.cs
-??? Views/
-?   ??? Home/
-?   ?   ??? Index.cshtml
-?   ??? Shared/
-?       ??? _Layout.cshtml
-??? wwwroot/
-?   ??? css/
-?   ?   ??? site.css
-?   ??? js/
-?       ??? music-suggester.js
-??? Program.cs
-??? appsettings.json
-```
 
 ## Features Explained
 
