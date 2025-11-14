@@ -47,7 +47,8 @@ public class SpotifyService
         
         if (!response.IsSuccessStatusCode)
         {
-            throw new Exception("Failed to get Spotify access token");
+            var respBody = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Failed to get Spotify access token: {response.StatusCode} - {respBody}");
         }
 
         var json = await response.Content.ReadAsStringAsync();
@@ -78,7 +79,8 @@ public class SpotifyService
         
         if (!response.IsSuccessStatusCode)
         {
-            throw new Exception($"Spotify search failed: {response.StatusCode}");
+            var body = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Spotify search failed: {response.StatusCode} - {body}");
         }
 
         var json = await response.Content.ReadAsStringAsync();
@@ -108,6 +110,13 @@ public class SpotifyService
 
     public async Task<List<TrackInfo>> GetRecommendationsAsync(string seedGenres, int limit =10)
     {
+        // Validate inputs early: Spotify requires at least one seed parameter.
+        if (string.IsNullOrWhiteSpace(seedGenres))
+        {
+            // Return empty list instead of making an invalid request that yields 404.
+            return new List<TrackInfo>();
+        }
+
         var token = await GetAccessTokenAsync();
         var client = _httpClientFactory.CreateClient();
         
@@ -120,7 +129,17 @@ public class SpotifyService
         
         if (!response.IsSuccessStatusCode)
         {
-            throw new Exception($"Spotify recommendations failed: {response.StatusCode}");
+            // Read response body to aid debugging, but do not throw for 404/400.
+            var body = await response.Content.ReadAsStringAsync();
+
+            // For common client errors return empty list so caller can continue with fallback logic.
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound ||
+                response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                return new List<TrackInfo>();
+            }
+
+            throw new Exception($"Spotify recommendations failed: {response.StatusCode} - {body}");
         }
 
         var json = await response.Content.ReadAsStringAsync();
